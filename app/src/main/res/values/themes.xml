@@ -1,0 +1,17 @@
+<resources>
+    <style name="Theme.RemoteControl" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#1B8EF8</item>
+        <item name="colorPrimaryDark">#FFFFFF</item>
+        <item name="colorAccent">#1B8EF8</item>
+        <item name="android:windowBackground">#F5F7FA</item>
+        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:editTextColor">#1A1A2E</item>
+        <item name="android:textColorHint">#AAAAAA</item>
+    </style>
+
+    <style name="Theme.RemoteControl.Dialog" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+    </style>
+</resources>

@@ -1,0 +1,82 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.example.remotecontrol'
+    compileSdk 36
+
+defaultConfig {
+        applicationId "com.example.remotecontrol"
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+
+        // Gemini API key
+        def localProperties = new java.util.Properties()
+        def localPropertiesFile = rootProject.file("local.properties")
+        if (!localPropertiesFile.exists()) localPropertiesFile = new File("../local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.withReader('UTF-8') { reader -> localProperties.load(reader) }
+        }
+        buildConfigField "String", "GEMINI_API_KEY", "\"${localProperties.getProperty('gemini_api_key', '')}\""
+        buildConfigField "String", "GROQ_KEY_1", "\"${localProperties.getProperty('groq_key_1', '')}\""
+        buildConfigField "String", "GROQ_KEY_2", "\"${localProperties.getProperty('groq_key_2', '')}\""
+        buildConfigField "String", "GROQ_KEY_3", "\"${localProperties.getProperty('groq_key_3', '')}\""
+        buildConfigField "String", "GROQ_KEY_4", "\"${localProperties.getProperty('groq_key_4', '')}\""
+        buildConfigField "String", "OPENROUTER_KEY", "\"${localProperties.getProperty('openrouter_key', '')}\""
+        buildConfigField "String", "GROQ_KEY_5", "\"${localProperties.getProperty('groq_key_5', '')}\""
+        buildConfigField "String", "GROQ_KEY_6", "\"${localProperties.getProperty('groq_key_6', '')}\""
+
+        buildConfigField "String", "YOUTUBE_API_KEY", "\"${localProperties.getProperty('youtube_api_key', '')}\""
+        buildConfigField "String", "TELEGRAM_BOT_TOKEN", "\"${localProperties.getProperty('telegram_bot_token', '')}\""
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('../release.keystore')
+            storePassword 'remote123'
+            keyAlias 'remotecontrol'
+            keyPassword 'remote123'
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.release
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+    implementation "androidx.webkit:webkit:1.12.1"
+    implementation "com.github.PhilJay:MPAndroidChart:v3.1.0"
+    implementation 'androidx.core:core-ktx:1.18.0'
+    implementation 'androidx.media:media:1.7.0'
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.biometric:biometric:1.1.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.google.android.material:material:1.13.0'
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
+}

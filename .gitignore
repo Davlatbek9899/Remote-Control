@@ -1,0 +1,21 @@
+
+# Android / Gradle
+.gradle/
+.idea/
+.kotlin/
+build/
+local.properties
+.DS_Store
+
+# Secrets
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Archives
+*.zip
+RemoteControl_transcript.txt

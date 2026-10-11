@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:padding="20dp">
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="🪫 Batareya oz qoldi SMS"
+        android:textColor="#1A1A2E" android:textSize="18sp"
+        android:textStyle="bold" android:layout_marginBottom="16dp"/>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Yoqish/O'chirish"
+            android:textColor="#1A1A2E" android:textSize="14sp"/>
+        <Switch android:id="@+id/switchBatteryLow"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+    <LinearLayout android:id="@+id/layoutThreshold"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Chegara: " android:textColor="#888888" android:textSize="12sp"/>
+        <SeekBar android:id="@+id/seekBatteryThreshold"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:max="50" android:progress="20"
+            android:progressTint="#FF4B4B" android:thumbTint="#FF4B4B"/>
+        <TextView android:id="@+id/tvThresholdValue"
+            android:layout_width="36dp" android:layout_height="wrap_content"
+            android:text="20%" android:textColor="#FF4B4B"
+            android:textSize="12sp" android:textStyle="bold" android:gravity="end"/>
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="SMS yuborish raqami:"
+        android:textColor="#888888" android:textSize="12sp" android:layout_marginBottom="6dp"/>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        <TextView android:id="@+id/tvAlertPhoneLow"
+            android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Raqam kiritilmagan"
+            android:textColor="#1A1A2E" android:textSize="14sp"/>
+        <Button android:id="@+id/btnSetPhoneLow"
+            android:layout_width="wrap_content" android:layout_height="32dp"
+            android:text="O'zgartir" android:background="@drawable/btn_blue"
+            android:textColor="#FFFFFF" android:textSize="11sp"
+            android:paddingHorizontal="12dp" android:stateListAnimator="@null"/>
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="SIM karta:"
+            android:textColor="#888888" android:textSize="12sp"/>
+        <Button android:id="@+id/btnSimLow"
+            android:layout_width="wrap_content" android:layout_height="32dp"
+            android:text="SIM tanlash" android:background="@drawable/card_blue_light"
+            android:textColor="#1B8EF8" android:textSize="11sp"
+            android:paddingHorizontal="12dp" android:stateListAnimator="@null"/>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,443 @@
+package com.example.remotecontrol
+
+import android.app.Service
+import android.content.Intent
+import android.os.IBinder
+import android.util.Log
+import org.json.JSONObject
+import java.net.URL
+import java.net.HttpURLConnection
+
+class TelegramService : Service() {
+
+    companion object {
+        var instance: TelegramService? = null
+    }
+
+    private val TAG = "TelegramService"
+    private var lastUpdateId = 0L
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val pollInterval = 1000L // 1 sekund
+
+    private val pollRunnable = object : Runnable {
+        override fun run() {
+            checkUpdates()
+            handler.postDelayed(this, pollInterval)
+        }
+    }
+
+    private var isPolling = false
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        instance = this
+        Log.d(TAG, "TelegramService ishga tushdi! Token: ${BuildConfig.TELEGRAM_BOT_TOKEN.take(10)}")
+        startForeground()
+        if (!isPolling) {
+            isPolling = true
+            handler.post(pollRunnable)
+        }
+        return START_STICKY
+    }
+
+    private fun startForeground() {
+        val channelId = "telegram_service"
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId, "Remote Control", android.app.NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(android.app.NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+        val notification = androidx.core.app.NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Remote Control")
+            .setContentText("Faol")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .build()
+        startForeground(2, notification)
+    }
+
+    override fun onDestroy() {
+        instance = null
+        handler.removeCallbacks(pollRunnable)
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun checkUpdates() {
+        Thread {
+            try {
+                val token = BuildConfig.TELEGRAM_BOT_TOKEN
+                val url = "https://api.telegram.org/bot$token/getUpdates?offset=${lastUpdateId + 1}&timeout=1"
+                
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                val response = connection.inputStream.bufferedReader().readText()
+                
+                val json = JSONObject(response)
+                if (!json.getBoolean("ok")) return@Thread
+                
+                val updates = json.getJSONArray("result")
+                for (i in 0 until updates.length()) {
+                    val update = updates.getJSONObject(i)
+                    val updateId = update.getLong("update_id")
+                    lastUpdateId = updateId
+                    
+                    if (!update.has("message")) continue
+                    val message = update.getJSONObject("message")
+                    
+                    val chatId = message.getJSONObject("chat").getLong("id").toString()
+                    val text = message.optString("text", "")
+
+                    // Audio xabar
+                    val audioObj = when {
+                        message.has("audio") -> message.getJSONObject("audio")
+                        message.has("voice") -> message.getJSONObject("voice")
+                        message.has("document") && message.getJSONObject("document").optString("mime_type", "").startsWith("audio") -> message.getJSONObject("document")
+                        else -> null
+                    }
+
+                    if (audioObj != null && JarvisManager.isActiveSession(this, chatId)) {
+                        val fileId = audioObj.getString("file_id")
+                        if (CommandHandler.isDuplicate(chatId, "audio_$fileId")) continue
+                        val fileName = audioObj.optString("file_name", "audio.mp3")
+                        // AI ga audio haqida xabar yuboramiz, ovoz buyrug'ini ham bajaradi
+                        sendTelegram(chatId, "🎵 Audio qabul qilindi, yuklanmoqda...")
+                        Thread {
+                            val aiResp = JarvisManager.sendMessage(this@TelegramService, chatId, 
+                                "Foydalanuvchi audio fayl yubordi: $fileName. Oldingi suhbatda ovoz darajasi haqida so'ralgan bo'lsa, avval ovoz buyrug'ini baj, keyin audio ijro boshlanadi deb ayt. Faqat JSON qaytarma, oddiy javob ber.")
+                            if (aiResp.type == "command" && aiResp.cmd.isNotEmpty()) {
+                                TelegramCommandHandler(this@TelegramService, chatId).executeAndReturn(aiResp.cmd)
+                            } else if (aiResp.type == "multi") {
+                                for (cmd in aiResp.commands) {
+                                    if (cmd.type == "command") TelegramCommandHandler(this@TelegramService, chatId).executeAndReturn(cmd.cmd)
+                                }
+                            }
+                        }.start()
+                        downloadAndPlayAudio(chatId, fileId, fileName)
+                        continue
+                    }
+                    
+                    // Rasm
+                    val photoArray = message.optJSONArray("photo")
+                    if (photoArray != null && photoArray.length() > 0) {
+                        val photo = photoArray.getJSONObject(photoArray.length() - 1)
+                        val fileId = photo.getString("file_id")
+                        val cap = message.optString("caption", "")
+                        val activeChat = JarvisManager.getActiveChatId(this)
+                        Log.d(TAG, "Photo: chatId=$chatId activeChat=$activeChat")
+                        if (activeChat != null && activeChat != chatId) continue
+                        if (!CommandHandler.isDuplicate(chatId, "photo_$fileId")) {
+                            downloadAndShowMedia(chatId, fileId, false, cap)
+                        }
+                        continue
+                    }
+
+                    // Video
+                    val videoObj = message.optJSONObject("video")
+                    if (videoObj != null) {
+                        val fileId = videoObj.getString("file_id")
+                        val cap = message.optString("caption", "")
+                        val activeChatV = JarvisManager.getActiveChatId(this)
+                        Log.d(TAG, "Video: chatId=$chatId activeChatV=$activeChatV")
+                        if (activeChatV != null && activeChatV != chatId) continue
+                        if (!CommandHandler.isDuplicate(chatId, "video_$fileId")) {
+                            downloadAndShowMedia(chatId, fileId, true, cap)
+                        }
+                        continue
+                    }
+
+                    if (text.isEmpty()) continue
+                    
+                    Log.d(TAG, "Telegram xabar: $chatId -> $text")
+                    if (CommandHandler.isDuplicate(chatId, text)) continue
+                    processMessage(chatId, text)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Xato: ${e.message}")
+            }
+        }.start()
+    }
+
+    private fun processMessage(chatId: String, text: String) {
+        val trimmed = text.trim()
+
+        // Ruxsat tekshirish
+        if (!SecurityManager.isAllowed(this, chatId)) return
+
+        // #AI(parol) tekshirish — AI rejimini boshlash
+        if (trimmed.lowercase().startsWith("#ai")) {
+            val password = trimmed.substring(3).trim()
+            if (SecurityManager.checkPassword(this, password)) {
+                // Agar boshqa chatId AI rejimida bo'lsa — uni o'chirib yangi chatId ga o'tamiz
+                val prevChatId = JarvisManager.getActiveChatId(this)
+                if (prevChatId != null && prevChatId != chatId) {
+                    sendTelegram(prevChatId, "🔴 Boshqa qurilmadan ulanildi. JARVIS rejimi o'chirildi.")
+                }
+                JarvisManager.startSession(this, chatId)
+                JarvisManager.clearHistory(this, chatId)
+                sendTelegram(chatId, "🤖 Salom! Men JARVIS — sizning shaxsiy yordamchingizman!\n✅ AI rejimi yoqildi.\n💬 Menga istalgan narsa haqida so'rang!\n🔴 Chiqish uchun: #stop_ai")
+            }
+            return
+        }
+
+        // AI rejimi aktiv bo'lsa — faqat aktiv chatId dan kelgan xabarlarni qabul qilish
+        if (JarvisManager.hasActiveSession(this)) {
+            if (!JarvisManager.isActiveSession(this, chatId)) return // Boshqa chatId dan kelsa — e'tiborsiz
+            if (trimmed.startsWith("#AI") || trimmed.startsWith("#ai")) return
+            if (trimmed.lowercase() == "#stop_ai") {
+                JarvisManager.stopSession(this, chatId)
+                sendTelegram(chatId, "🔴 JARVIS rejimi o'chirildi. Xayr!")
+            } else {
+                Thread {
+                    val response = JarvisManager.sendMessage(this, chatId, trimmed)
+                    handleJarvisResponse(chatId, response)
+                }.start()
+            }
+            return
+        }
+
+        // Oddiy buyruq rejimi — parolga qarab ishlaydi
+        if (!trimmed.startsWith("#")) return
+
+        val (command, password) = SecurityManager.parseCommand(trimmed)
+        if (!SecurityManager.checkPassword(this, password)) {
+            return
+        }
+
+        Log.d(TAG, "Buyruq: $command")
+        SecurityManager.addCommandSender(this, chatId)
+        CommandLogger.log(this, chatId, command)
+        TelegramCommandHandler(this, chatId).execute(chatId, command)
+    }
+
+    private fun handleJarvisResponse(chatId: String, response: JarvisResponse) {
+        when (response.type) {
+            "music" -> {
+                sendTelegram(chatId, response.message)
+                JarvisCommandExecutor.playMusic(this, response.query, chatId, null)
+            }
+            "youtube" -> {
+                sendTelegram(chatId, response.message)
+                JarvisCommandExecutor.playMusicYouTube(this, response.query, chatId, null)
+            }
+            "weather" -> {
+                sendTelegram(chatId, response.message)
+                JarvisCommandExecutor.getWeather(this, chatId, response.city, CommandHandler(this))
+            }
+            "command" -> {
+                if (response.cmd.isNotEmpty()) {
+                    val cmdResult = TelegramCommandHandler(this, chatId).executeAndReturn(response.cmd)
+                    if (cmdResult != null) {
+                        Thread {
+                            val styles = listOf(
+                                "Quyidagi ma'lumotni do'stona va samimiy tarzda, emojilar bilan yoz:",
+                                "Quyidagi ma'lumotni qisqa va aniq, lekin chiroyli qilib yoz:",
+                                "Quyidagi ma'lumotni xushchaqchaq va ijobiy tarzda yoz:",
+                                "Quyidagi ma'lumotni professional va rasmiy tarzda yoz:"
+                            )
+                            val aiPrompt = "${styles.random()} $cmdResult"
+                            val aiResponse = JarvisManager.sendMessage(this@TelegramService, chatId, aiPrompt)
+                            sendTelegram(chatId, aiResponse.message)
+                        }.start()
+                    }
+                }
+            }
+            "multi" -> {
+                if (response.message.isNotEmpty()) sendTelegram(chatId, response.message)
+                var delayMs = 0L
+                for (cmd in response.commands) {
+                    when (cmd.type) {
+                        "delay" -> delayMs = cmd.seconds * 1000L
+                        "command" -> {
+                            if (delayMs > 0) {
+                                val d = delayMs
+                                Thread { Thread.sleep(d); TelegramCommandHandler(this, chatId).executeAndReturn(cmd.cmd) }.start()
+                            } else {
+                                TelegramCommandHandler(this, chatId).executeAndReturn(cmd.cmd)
+                            }
+                        }
+                        "music" -> {
+                            if (delayMs > 0) {
+                                val d = delayMs; val q = cmd.query
+                                Thread { Thread.sleep(d); JarvisCommandExecutor.playMusic(this@TelegramService, q, chatId, null) }.start()
+                            } else {
+                                JarvisCommandExecutor.playMusic(this, cmd.query, chatId, null)
+                            }
+                        }
+                    }
+                }
+            }
+            else -> sendTelegram(chatId, response.message)
+        }
+    }
+
+    fun sendTelegramLocation(chatId: String, lat: Double, lng: Double) {
+        Thread {
+            try {
+                val token = BuildConfig.TELEGRAM_BOT_TOKEN
+                val url = "https://api.telegram.org/bot$token/sendLocation"
+                val body = JSONObject().apply {
+                    put("chat_id", chatId)
+                    put("latitude", lat)
+                    put("longitude", lng)
+                }.toString()
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.doOutput = true
+                connection.outputStream.write(body.toByteArray())
+                connection.inputStream.bufferedReader().readText()
+                Log.d(TAG, "Location yuborildi: $lat, $lng")
+            } catch (e: Exception) {
+                Log.e(TAG, "Location xato: ${e.message}")
+            }
+        }.start()
+    }
+
+    fun sendTelegram(chatId: String, text: String) {
+        Thread {
+            try {
+                val token = BuildConfig.TELEGRAM_BOT_TOKEN
+                val url = "https://api.telegram.org/bot$token/sendMessage"
+                val body = JSONObject().apply {
+                    put("chat_id", chatId)
+                    put("text", text)
+                }.toString()
+
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Content-Type", "application/json")
+                connection.doOutput = true
+                connection.outputStream.write(body.toByteArray())
+                connection.inputStream.bufferedReader().readText()
+                Log.d(TAG, "Telegram xabar yuborildi: $chatId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Telegram yuborish xatosi: ${e.message}")
+            }
+        }.start()
+    }
+
+    private fun downloadAndShowMedia(chatId: String, fileId: String, isVideo: Boolean, caption: String) {
+        Thread {
+            try {
+                val token = BuildConfig.TELEGRAM_BOT_TOKEN
+                // File path olish
+                val fileInfoUrl = "https://api.telegram.org/bot$token/getFile?file_id=$fileId"
+                val conn1 = java.net.URL(fileInfoUrl).openConnection() as java.net.HttpURLConnection
+                conn1.connectTimeout = 10000
+                val fileInfo = org.json.JSONObject(conn1.inputStream.bufferedReader().readText())
+                val filePath = fileInfo.getJSONObject("result").getString("file_path")
+                val ext = if (isVideo) ".mp4" else ".jpg"
+                val localFile = java.io.File(cacheDir, "media_${System.currentTimeMillis()}$ext")
+
+                // Yuklab olish
+                val downloadUrl = "https://api.telegram.org/file/bot$token/$filePath"
+                val conn2 = java.net.URL(downloadUrl).openConnection() as java.net.HttpURLConnection
+                conn2.connectTimeout = 30000
+                conn2.readTimeout = 30000
+                localFile.outputStream().use { out ->
+                    conn2.inputStream.copyTo(out)
+                }
+
+                android.util.Log.d(TAG, "Media yuklandi: ${localFile.absolutePath}")
+
+                // OverlayMediaActivity ni ochish
+                val intent = android.content.Intent(this, OverlayMediaActivity::class.java).apply {
+                    flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                    putExtra("file_path", localFile.absolutePath)
+                    putExtra("is_video", isVideo)
+                    putExtra("caption", caption)
+                }
+                startActivity(intent)
+
+                val type = if (isVideo) "🎬 Video" else "🖼 Rasm"
+                sendTelegram(chatId, "$type telefoningizda ko'rsatilmoqda!")
+
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Media xato: ${e.message}")
+                sendTelegram(chatId, "⚠️ Media xato: ${e.message?.take(50)}")
+            }
+        }.start()
+    }
+
+    private fun downloadAndPlayAudio(chatId: String, fileId: String, fileName: String) {
+        Thread {
+            try {
+                val token = BuildConfig.TELEGRAM_BOT_TOKEN
+                // 1. File path olish
+                val fileInfoUrl = "https://api.telegram.org/bot$token/getFile?file_id=$fileId"
+                val conn1 = java.net.URL(fileInfoUrl).openConnection() as java.net.HttpURLConnection
+                conn1.connectTimeout = 10000
+                val fileInfo = org.json.JSONObject(conn1.inputStream.bufferedReader().readText())
+                val filePath = fileInfo.getJSONObject("result").getString("file_path")
+
+                // 2. Faylni yuklab olish
+                val downloadUrl = "https://api.telegram.org/file/bot$token/$filePath"
+                val audioFile = java.io.File(cacheDir, fileName)
+                val conn2 = java.net.URL(downloadUrl).openConnection() as java.net.HttpURLConnection
+                conn2.connectTimeout = 30000
+                conn2.readTimeout = 60000
+                audioFile.outputStream().use { out ->
+                    conn2.inputStream.copyTo(out)
+                }
+
+                Log.d(TAG, "Audio yuklandi: ${audioFile.absolutePath}")
+
+                // 3. AudioPlayerService ga yuborish
+                val intent = Intent(this, AudioPlayerService::class.java).apply {
+                    putExtra("audio_path", audioFile.absolutePath)
+                    putExtra("audio_name", fileName)
+                    putExtra("chat_id", chatId)
+                }
+                startService(intent)
+                sendTelegram(chatId, "▶️ Ijro boshlandi: $fileName")
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Audio xatosi: ${e.message}")
+                sendTelegram(chatId, "❌ Audio yuklab bo'lmadi: ${e.message?.take(50)}")
+            }
+        }.start()
+    }
+
+    fun sendTelegramPhoto(chatId: String, photoPath: String, caption: String = "") {
+        Thread {
+            try {
+                val token = BuildConfig.TELEGRAM_BOT_TOKEN
+                val url = "https://api.telegram.org/bot$token/sendPhoto"
+                val file = java.io.File(photoPath)
+                if (!file.exists()) {
+                    sendTelegram(chatId, "❌ Fayl topilmadi")
+                    return@Thread
+                }
+
+                val boundary = "----FormBoundary${System.currentTimeMillis()}"
+                val connection = URL(url).openConnection() as HttpURLConnection
+                connection.requestMethod = "POST"
+                connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+                connection.doOutput = true
+
+                val output = connection.outputStream
+                output.write("--$boundary\r\n".toByteArray())
+                output.write("Content-Disposition: form-data; name=\"chat_id\"\r\n\r\n".toByteArray())
+                output.write("$chatId\r\n".toByteArray())
+                output.write("--$boundary\r\n".toByteArray())
+                output.write("Content-Disposition: form-data; name=\"photo\"; filename=\"${file.name}\"\r\n".toByteArray())
+                output.write("Content-Type: image/jpeg\r\n\r\n".toByteArray())
+                output.write(file.readBytes())
+                output.write("\r\n--$boundary--\r\n".toByteArray())
+
+                if (caption.isNotEmpty()) {
+                    // Caption ni alohida yuborish
+                    sendTelegram(chatId, caption)
+                }
+
+                connection.inputStream.bufferedReader().readText()
+                Log.d(TAG, "Rasm yuborildi: $chatId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Rasm yuborish xatosi: ${e.message}")
+                sendTelegram(chatId, "❌ Rasmni yuborishda xatolik")
+            }
+        }.start()
+    }
+}

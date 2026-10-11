@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/card_white"
+    android:padding="24dp"
+    android:layout_marginHorizontal="24dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Raqamni bloklash"
+            android:textColor="#1A1A2E" android:textSize="18sp" android:textStyle="bold"/>
+        <ImageButton android:id="@+id/btnCloseBlock"
+            android:layout_width="32dp" android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="@drawable/input_light" android:padding="6dp"/>
+    </LinearLayout>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+        <EditText android:id="@+id/etBlockNumber"
+            android:layout_width="0dp" android:layout_height="48dp" android:layout_weight="1"
+            android:hint="+998XXXXXXXXX" android:textColor="#1A1A2E"
+            android:inputType="phone" android:background="@drawable/input_light"
+            android:paddingHorizontal="14dp"/>
+        <Button android:id="@+id/btnBlockAdd"
+            android:layout_width="wrap_content" android:layout_height="48dp"
+            android:text="BLOKLA" android:layout_marginStart="8dp"
+            android:background="@drawable/btn_red" android:textColor="#FFFFFF"
+            android:textSize="12sp" android:paddingHorizontal="14dp"
+            android:stateListAnimator="@null"/>
+    </LinearLayout>
+
+    <ListView android:id="@+id/lvBlockedNumbers"
+        android:layout_width="match_parent" android:layout_height="140dp"
+        android:background="@drawable/input_light" android:divider="#F0F0F0"
+        android:dividerHeight="1dp"/>
+</LinearLayout>

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F7FA">
+
+    <LinearLayout android:id="@+id/headerCommands"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:background="#FFFFFF"
+        android:paddingHorizontal="20dp" android:paddingVertical="16dp">
+
+        <ImageButton android:id="@+id/btnBackCommands"
+            android:layout_width="36dp" android:layout_height="36dp"
+            android:src="@android:drawable/ic_media_previous"
+            android:background="@drawable/input_light" android:padding="8dp"/>
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="Buyruqlar ro'yxati"
+            android:textColor="#1A1A2E" android:textSize="18sp"
+            android:textStyle="bold" android:layout_marginStart="12dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomNavCommands"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:background="@drawable/nav_bar_bg"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp">
+
+        <LinearLayout android:id="@+id/navHistoryTab"
+            android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="📜" android:textSize="20sp" android:gravity="center"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Tarix" android:textColor="#AAAAAA" android:textSize="10sp"/>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/navCommandsTab"
+            android:layout_width="0dp" android:layout_height="56dp"
+            android:layout_weight="1" android:orientation="vertical"
+            android:gravity="center" android:background="@drawable/nav_item_selected">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="📋" android:textSize="22sp" android:gravity="center"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Buyruqlar" android:textColor="#1B8EF8" android:textSize="10sp" android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/navHomeTab"
+            android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="🏠" android:textSize="20sp" android:gravity="center"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Asosiy" android:textColor="#AAAAAA" android:textSize="10sp"/>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/navChildTab"
+            android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="👶" android:textSize="20sp" android:gravity="center"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Child" android:textColor="#AAAAAA" android:textSize="10sp"/>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/navProfileTab"
+            android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="👤" android:textSize="20sp" android:gravity="center"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Profil" android:textColor="#AAAAAA" android:textSize="10sp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:layout_below="@id/headerCommands"
+        android:layout_above="@id/bottomNavCommands"
+        android:scrollbars="none">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingHorizontal="16dp"
+            android:paddingTop="12dp" android:paddingBottom="16dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_blue_light"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="PAROL BILAN ISHLATISH"
+                    android:textColor="#1B8EF8" android:textSize="12sp"
+                    android:textStyle="bold" android:layout_marginBottom="8dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#buyruq_PAROL\nMasalan: #ping_1234\n#contacts_A_1234"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.6"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="⚡  ASOSIY BUYRUQLAR"
+                    android:textColor="#2DC96B" android:textSize="13sp"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#ping              Tirikligini tekshirish\n#battery           Batareya holati\n#location          GPS joylashuv\n#device_info       Qurilma ma'lumoti\n#network_info      Tarmoq info"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.7"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="📷  KAMERA VA MEDIA"
+                    android:textColor="#F8A11B" android:textSize="13sp"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#take_picture      Orqa kamera\n#take_front_pic    Old kamera\n#record_audio:30   Audio yozish\n#flash_on/off      Chiroq\n#media_play/stop   Musiqa"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.7"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="🔊  OVOZ BOSHQARUVI"
+                    android:textColor="#BF5AF2" android:textSize="13sp"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#volume:50         Musiqa ovozi\n#ringtone:50       Qo'ng'iroq ovozi\n#mute              Ovoz o'chirish\n#unmute            Ovoz yoqish"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.7"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="📞  ALOQA"
+                    android:textColor="#2DC96B" android:textSize="13sp"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#call:+998XXXXXXXXX    Qo'ng'iroq\n#sms:+998XX:Matn      SMS yuborish\n#sos:+998XXXXXXXXX    SOS signal"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.7"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="📊  MA'LUMOT OLISH"
+                    android:textColor="#1B8EF8" android:textSize="13sp"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#contacts_A        A harfli kontaktlar\n#call_log          Qo'ng'iroqlar\n#sms_list          Oxirgi SMSlar\n#installed_apps    Ilovalar"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.7"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="📱  QURILMA BOSHQARUVI"
+                    android:textColor="#F8A11B" android:textSize="13sp"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#wifi_on/off       WiFi\n#bluetooth_on/off  Bluetooth\n#vibrate           Tebratish\n#screen_on         Ekran yoqish\n#screen_off        Ekran o'chirish\n#reboot            Restart\n#shutdown          O'chirish"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.7"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:padding="16dp" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="🔐  XAVFSIZLIK"
+                    android:textColor="#FF4B4B" android:textSize="13sp"
+                    android:textStyle="bold" android:layout_marginBottom="10dp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="#alarm:07:30       Signal\n#notify:Matn       Bildirishnoma\n#block:+998XX      Bloklash\n#unblock:+998XX    Blokdan chiqarish\n#set_password:1234 Parol"
+                    android:textColor="#444444" android:textSize="13sp"
+                    android:fontFamily="monospace" android:lineSpacingMultiplier="1.7"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

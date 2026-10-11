@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: rgba(0,0,0,0.5); font-family: sans-serif; }
+.card {
+  overflow: hidden;
+  position: relative;
+  background-color: #ffffff;
+  text-align: left;
+  border-radius: 0.5rem;
+  width: 85vw;
+  max-width: 320px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+  animation: slideUp 0.3s ease, shake 0.6s ease 0.3s;
+}
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes shake {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(-10px); }
+  30%  { transform: translateX(10px); }
+  45%  { transform: translateX(-8px); }
+  60%  { transform: translateX(8px); }
+  75%  { transform: translateX(-5px); }
+  90%  { transform: translateX(5px); }
+  100% { transform: translateX(0); }
+}
+.header { padding: 1.25rem 1rem 1rem 1rem; background-color: #ffffff; }
+.image {
+  display: flex; margin: 0 auto;
+  background-color: #fee2e2;
+  justify-content: center; align-items: center;
+  width: 3rem; height: 3rem; border-radius: 9999px;
+}
+.image svg { color: #dc2626; width: 1.5rem; height: 1.5rem; }
+.content { margin-top: 0.75rem; text-align: center; }
+.title { color: #111827; font-size: 1rem; font-weight: 600; line-height: 1.5rem; }
+.message { margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem; line-height: 1.25rem; }
+.actions { margin: 0.75rem 1rem; background-color: #f9fafb; }
+.retry {
+  display: inline-flex; padding: 0.5rem 1rem;
+  background-color: #1B8EF8; color: #ffffff;
+  font-size: 1rem; line-height: 1.5rem; font-weight: 500;
+  justify-content: center; width: 100%;
+  border-radius: 0.375rem; border: none;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); cursor: pointer;
+}
+.cancel {
+  display: inline-flex; margin-top: 0.75rem; padding: 0.5rem 1rem;
+  background-color: #ffffff; color: #374151;
+  font-size: 1rem; line-height: 1.5rem; font-weight: 500;
+  justify-content: center; width: 100%;
+  border-radius: 0.375rem; border: 1px solid #d1d5db;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="image">
+      <svg aria-hidden="true" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" fill="none">
+        <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" stroke-linejoin="round" stroke-linecap="round"></path>
+      </svg>
+    </div>
+    <div class="content">
+      <span class="title">Server bilan aloqa yo'q</span>
+      <p class="message">Iltimos, internet aloqangizni tekshiring va qayta urinib ko'ring.</p>
+    </div>
+    <div class="actions">
+      <button class="retry" onclick="Android.onRetry()">Qayta urinish</button>
+      <button class="cancel" onclick="Android.onCancel()">Bekor qilish</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

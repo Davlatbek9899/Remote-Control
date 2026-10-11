@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { display: flex; align-items: center; justify-content: center; height: 100vh; background: transparent; }
+</style>
+</head>
+<body>
+<button
+  id="btn"
+  onclick="handleClick()"
+  class="relative bottom-0 flex justify-center items-center gap-2 border border-[#1B8EF8] rounded-xl text-[#FFF] font-black bg-[#1B8EF8] uppercase px-8 py-4 z-10 overflow-hidden ease-in-out duration-700 w-full mx-4"
+>
+  <span id="defaultText" class="truncate ease-in-out duration-300">Test</span>
+
+  <div id="loadingDiv" class="absolute flex flex-row justify-center items-center gap-2 ease-in-out duration-300" style="transform: translateX(150px); opacity: 0;">
+    <div class="animate-spin size-4 border-2 border-white border-t-transparent rounded-full" style="width:16px;height:16px;border-radius:50%;border:2px solid white;border-top-color:transparent;animation:spin 0.8s linear infinite;"></div>
+    &nbsp;Tekshirilmoqda...
+  </div>
+
+  <span id="doneText" class="absolute translate-x-96 ease-in-out duration-300">✓ Tekshirildi</span>
+
+  <svg id="arrow"
+    class="fill-[#FFF] ease-in-out duration-700"
+    stroke="currentColor" fill="currentColor" stroke-width="0"
+    viewBox="0 0 512 512" height="16" width="16" xmlns="http://www.w3.org/2000/svg">
+    <path d="m476.59 227.05-.16-.07L49.35 49.84A23.56 23.56 0 0 0 27.14 52 24.65 24.65 0 0 0 16 72.59v113.29a24 24 0 0 0 19.52 23.57l232.93 43.07a4 4 0 0 1 0 7.86L35.53 303.45A24 24 0 0 0 16 327v113.31A23.57 23.57 0 0 0 26.59 460a23.94 23.94 0 0 0 13.22 4 24.55 24.55 0 0 0 9.52-1.93L476.4 285.94l.19-.09a32 32 0 0 0 0-58.8z"/>
+  </svg>
+</button>
+
+<script>
+var state = 'default';
+
+function handleClick() {
+  if (state !== 'default') return;
+  state = 'loading';
+
+  // Loading holatiga o'tish
+  document.getElementById('defaultText').style.transform = 'translateX(150px)';
+  document.getElementById('defaultText').style.opacity = '0';
+  document.getElementById('arrow').style.transform = 'translateX(150px)';
+  document.getElementById('arrow').style.opacity = '0';
+  document.getElementById('loadingDiv').style.transform = 'translateX(0)';
+  document.getElementById('loadingDiv').style.opacity = '1';
+
+  // Android ga xabar
+  try { Android.onTestClick(); } catch(e) {}
+
+  // 2 soniyadan keyin "Tekshirildi"
+  setTimeout(function() {
+    document.getElementById('loadingDiv').style.transform = 'translateX(150px)';
+    document.getElementById('loadingDiv').style.opacity = '0';
+    document.getElementById('doneText').style.transform = 'translateX(0)';
+    document.getElementById('doneText').style.opacity = '1';
+    state = 'done';
+
+    // 3 soniyadan keyin oldingi holatga
+    setTimeout(function() {
+      document.getElementById('doneText').style.transform = 'translateX(150px)';
+      document.getElementById('doneText').style.opacity = '0';
+      setTimeout(function() {
+        // loadingDiv ni to'liq reset
+        document.getElementById('loadingDiv').style.transform = 'translateX(96px)';
+        document.getElementById('loadingDiv').style.opacity = '0';
+        document.getElementById('defaultText').style.transform = 'translateX(0)';
+        document.getElementById('defaultText').style.opacity = '1';
+        document.getElementById('arrow').style.transform = 'translateX(0)';
+        document.getElementById('arrow').style.opacity = '1';
+        state = 'default';
+      }, 300);
+    }, 3000);
+  }, 2000);
+}
+</script>
+</body>
+</html>

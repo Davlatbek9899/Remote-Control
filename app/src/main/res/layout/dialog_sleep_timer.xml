@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/card_white"
+    android:padding="20dp"
+    android:layout_marginHorizontal="16dp">
+
+    <!-- Header -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="&#127925;  Sleep Timer"
+            android:textColor="#1A1A2E" android:textSize="18sp" android:textStyle="bold"/>
+        <android.widget.ImageButton android:id="@+id/btnCloseTimer"
+            android:layout_width="32dp" android:layout_height="32dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:background="@drawable/input_light" android:padding="6dp"/>
+    </LinearLayout>
+
+    <!-- Circular timer -->
+    <FrameLayout
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="20dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <com.example.remotecontrol.CircularTimerView
+            android:id="@+id/circularTimerDialog"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="bottom">
+
+                <com.example.remotecontrol.FixedWidthTextView
+                    android:id="@+id/tvTimerMins"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="00:00"
+                    android:textColor="#1A1A2E"
+                    android:textSize="52sp"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-black"/>
+
+                <View
+                    android:id="@+id/viewPulseDot"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/pulse_dot_blue"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvTimerSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="daqiqa"
+                android:textColor="#888888"
+                android:textSize="13sp"
+                android:letterSpacing="0.1"/>
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Start button -->
+    <Button
+        android:id="@+id/btnTimerStart"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="BOSHLASH"
+        android:background="@drawable/btn_blue"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:letterSpacing="0.1"
+        android:stateListAnimator="@null"/>
+
+</LinearLayout>
