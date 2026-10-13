@@ -8,49 +8,67 @@ import android.util.Log
 
 object JarvisCommandExecutor {
 
-    // Musiqa ijro qilish
+    // Telegram orqali chaqirilganda handler har doim null bo'ladi — shuning uchun
+    // natija xabari (muvaffaqiyat yoki xato) Telegram'ning o'ziga to'g'ridan-to'g'ri yuboriladi.
+    private fun notify(sender: String, handler: CommandHandler?, message: String) {
+        val telegramService = TelegramService.instance
+        if (telegramService != null && sender.isNotEmpty() && sender.all { it.isDigit() || it == '-' }) {
+            telegramService.sendTelegram(sender, message)
+        } else {
+            handler?.sendSms(sender, message)
+        }
+    }
+
+    // YouTube Data API orqali qidirish — ikkala (fon va YouTube ilovasi) rejimda ham ishlatiladi
+    private fun searchYoutube(apiKey: String, query: String): Pair<String, String>? {
+        val searchUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=${Uri.encode(query)}&type=video&videoCategoryId=10&key=$apiKey&maxResults=1"
+        val conn = java.net.URL(searchUrl).openConnection() as java.net.HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 8000
+        val json = org.json.JSONObject(conn.inputStream.bufferedReader().readText())
+        val items = json.getJSONArray("items")
+        if (items.length() == 0) return null
+        val videoId = items.getJSONObject(0).getJSONObject("id").getString("videoId")
+        val title = items.getJSONObject(0).getJSONObject("snippet").getString("title")
+        return videoId to title
+    }
+
+    // Musiqa ijro qilish — fon rejimida, YouTube ilovasini ochmasdan.
+    // Audio havolasini "o'g'irlash" o'rniga, YouTube'ning rasmiy IFrame Player'ini
+    // ko'rinmas oynada ishga tushiramiz (YouTubeAudioService) — bot-tekshiruvi yo'q.
     fun playMusic(context: Context, query: String, sender: String = "", handler: CommandHandler? = null) {
         Thread {
             try {
-                // Backend orqali audio URL olish
-                val serverUrl = "https://ungritty-tonisha-nonmedical.ngrok-free.dev/audio/stream?query=${Uri.encode(query)}"
-                val conn = java.net.URL(serverUrl).openConnection() as java.net.HttpURLConnection
-                conn.connectTimeout = 20000
-                conn.readTimeout = 20000
-                conn.setRequestProperty("ngrok-skip-browser-warning", "true")
-                val responseText = conn.inputStream.bufferedReader().readText()
-                val json = org.json.JSONObject(responseText)
-                val audioUrl = json.getString("audio_url")
-                val title = json.getString("title")
-                Log.d("Jarvis", "Audio URL olindi: $title")
-                val intent = android.content.Intent(context, AudioPlayerService::class.java).apply {
-                    putExtra("audio_path", audioUrl)
-                    putExtra("audio_name", title)
-                    putExtra("is_url", true)
+                val found = searchYoutube(BuildConfig.YOUTUBE_API_KEY, query)
+                if (found == null) {
+                    notify(sender, handler, "❌ \"$query\" bo'yicha video topilmadi, boshqacha nomlab qayta urinib ko'ring.")
+                    return@Thread
+                }
+                val (videoId, title) = found
+                val intent = android.content.Intent(context, YouTubeAudioService::class.java).apply {
+                    putExtra("video_id", videoId)
                 }
                 context.startService(intent)
-                handler?.sendSms(sender, "🎵 Ijro qilinmoqda: $title")
+                notify(sender, handler, "🎵 Ijro qilinmoqda: $title")
             } catch (e: Exception) {
                 Log.e("Jarvis", "Musiqa xatosi: ${e.message}")
-                handler?.sendSms(sender, "❌ Musiqa topilmadi: ${e.message?.take(50)}")
+                notify(sender, handler, "❌ Xatolik: ${e.message?.take(50)}")
             }
         }.start()
+    }
+
+    // Musiqani to'xtatish
+    fun stopMusic(context: Context) {
+        YouTubeAudioService.stop(context)
     }
 
     // YouTube ilovasi orqali musiqa ijro
     fun playMusicYouTube(context: Context, query: String, sender: String = "", handler: CommandHandler? = null) {
         Thread {
             try {
-                val apiKey = BuildConfig.YOUTUBE_API_KEY
-                val searchUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=${Uri.encode(query)}&type=video&videoCategoryId=10&key=$apiKey&maxResults=1"
-                val conn = java.net.URL(searchUrl).openConnection() as java.net.HttpURLConnection
-                conn.connectTimeout = 8000
-                conn.readTimeout = 8000
-                val json = org.json.JSONObject(conn.inputStream.bufferedReader().readText())
-                val items = json.getJSONArray("items")
-                if (items.length() > 0) {
-                    val videoId = items.getJSONObject(0).getJSONObject("id").getString("videoId")
-                    val title = items.getJSONObject(0).getJSONObject("snippet").getString("title")
+                val found = searchYoutube(BuildConfig.YOUTUBE_API_KEY, query)
+                if (found != null) {
+                    val (videoId, title) = found
                     val packages = listOf("com.android.youtube.premium", "com.google.android.youtube")
                     var opened = false
                     for (pkg in packages) {
@@ -72,12 +90,12 @@ object JarvisCommandExecutor {
                         }
                         context.startActivity(intent)
                     }
-                    handler?.sendSms(sender, "🎬 YouTube da ijro qilinmoqda: $title")
+                    notify(sender, handler, "🎬 YouTube da ijro qilinmoqda: $title")
                 } else {
-                    handler?.sendSms(sender, "❌ Topilmadi: $query")
+                    notify(sender, handler, "❌ \"$query\" bo'yicha video topilmadi, boshqacha nomlab qayta urinib ko'ring.")
                 }
             } catch (e: Exception) {
-                handler?.sendSms(sender, "❌ Xatolik: ${e.message?.take(30)}")
+                notify(sender, handler, "❌ Xatolik: ${e.message?.take(30)}")
             }
         }.start()
     }

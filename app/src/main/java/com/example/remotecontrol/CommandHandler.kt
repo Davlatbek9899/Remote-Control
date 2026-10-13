@@ -75,6 +75,8 @@ open class CommandHandler(protected val context: Context) {
             command == "#stop_audio" -> {
                 // AudioPlayerService ni to'xtatish
                 context.startService(Intent(context, AudioPlayerService::class.java).apply { action = "STOP" })
+                // Ko'rinmas YouTube pleyerni (fon musiqasi) to'xtatish
+                YouTubeAudioService.stop(context)
                 // YouTube/media ni to'xtatish
                 val audioManager = context.getSystemService(android.media.AudioManager::class.java)
                 val keyEvent = android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_MEDIA_STOP)

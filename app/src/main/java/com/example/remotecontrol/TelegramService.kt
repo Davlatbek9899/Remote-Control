@@ -165,6 +165,25 @@ class TelegramService : Service() {
         // Ruxsat tekshirish
         if (!SecurityManager.isAllowed(this, chatId)) return
 
+        // Bir nechta mos kontakt topilib, foydalanuvchidan tanlov so'ralgan bo'lsa —
+        // keyingi xabarni avval shu tanlov sifatida tekshiramiz.
+        PendingCallManager.getPending(chatId)?.let { pendingState ->
+            val selected = PendingCallManager.resolveSelection(trimmed, pendingState.candidates)
+            if (selected != null) {
+                PendingCallManager.clear(chatId)
+                when (pendingState.action) {
+                    PendingCallManager.PendingAction.CALL -> {
+                        sendTelegram(chatId, "📞 ${selected.first} ga qo'ng'iroq qilinmoqda...")
+                        placeCall(selected.second)
+                    }
+                    PendingCallManager.PendingAction.SHOW_NUMBER -> {
+                        sendTelegram(chatId, buildContactNumberMessage(selected.first, selected.second))
+                    }
+                }
+                return
+            }
+        }
+
         // #AI(parol) tekshirish — AI rejimini boshlash
         if (trimmed.lowercase().startsWith("#ai")) {
             val password = trimmed.substring(3).trim()
@@ -225,6 +244,85 @@ class TelegramService : Service() {
                 sendTelegram(chatId, response.message)
                 JarvisCommandExecutor.getWeather(this, chatId, response.city, CommandHandler(this))
             }
+            "list_contacts" -> {
+                Thread {
+                    val contacts = ContactsHelper.getAllContacts(this)
+                    if (contacts.isEmpty()) {
+                        sendTelegram(chatId, "📇 Kontaktlar topilmadi.")
+                    } else {
+                        // Telegram xabar uzunligi cheklangani uchun katta ro'yxatni bo'laklarga bo'lib yuboramiz
+                        contacts.map { it.first }.chunked(50).forEachIndexed { i, chunk ->
+                            val header = if (i == 0) "📇 Kontaktlar (${contacts.size} ta):\n" else ""
+                            sendTelegram(chatId, header + chunk.joinToString("\n"))
+                        }
+                    }
+                }.start()
+            }
+            "call_by_digits" -> {
+                val digits = response.query.filter { it.isDigit() }
+                Thread {
+                    val matches = PhoneLookupHelper.findByLastDigits(this, digits)
+                    when {
+                        matches.isEmpty() -> sendTelegram(chatId, "❌ $digits raqami bilan tugaydigan raqam topilmadi!")
+                        matches.size == 1 -> {
+                            val m = matches[0]
+                            sendTelegram(chatId, buildCallMatchMessage(m))
+                            placeCall(m.number)
+                        }
+                        else -> {
+                            PendingCallManager.setPending(
+                                chatId,
+                                matches.map { PhoneLookupHelper.formatUzPhone(it.number) to it.number },
+                                PendingCallManager.PendingAction.CALL
+                            )
+                            val list = matches.mapIndexed { i, m ->
+                                "${i + 1}. 📱 ${PhoneLookupHelper.formatUzPhone(m.number)}"
+                            }.joinToString("\n\n")
+                            sendTelegram(
+                                chatId,
+                                "🔍 $digits raqami bilan tugaydigan ${matches.size} ta raqam topildi. Qaysi biriga qo'ng'iroq qilay:\n\n$list"
+                            )
+                        }
+                    }
+                }.start()
+            }
+            "contact_call" -> {
+                val query = response.query
+                Thread {
+                    val matches = ContactsHelper.searchContacts(this, query)
+                    when {
+                        matches.isEmpty() -> sendTelegram(chatId, "❌ \"$query\" nomli kontakt topilmadi.")
+                        matches.size == 1 -> {
+                            val (name, number) = matches[0]
+                            sendTelegram(chatId, "📞 $name ga qo'ng'iroq qilinmoqda...")
+                            placeCall(number)
+                        }
+                        else -> {
+                            PendingCallManager.setPending(chatId, matches, PendingCallManager.PendingAction.CALL)
+                            val list = matches.mapIndexed { i, (name, _) -> "${i + 1}. $name" }.joinToString("\n")
+                            sendTelegram(chatId, "🔎 Bir nechta mos kontakt topildi, qaysi biriga qo'ng'iroq qilay?\n$list")
+                        }
+                    }
+                }.start()
+            }
+            "contact_number" -> {
+                val query = response.query
+                Thread {
+                    val matches = ContactsHelper.searchContacts(this, query)
+                    when {
+                        matches.isEmpty() -> sendTelegram(chatId, "❌ \"$query\" nomli kontakt topilmadi.")
+                        matches.size == 1 -> {
+                            val (name, number) = matches[0]
+                            sendTelegram(chatId, buildContactNumberMessage(name, number))
+                        }
+                        else -> {
+                            PendingCallManager.setPending(chatId, matches, PendingCallManager.PendingAction.SHOW_NUMBER)
+                            val list = matches.mapIndexed { i, (name, _) -> "${i + 1}. $name" }.joinToString("\n")
+                            sendTelegram(chatId, "🔎 Bir nechta mos kontakt topildi, qaysi birini ko'rsataman?\n$list")
+                        }
+                    }
+                }.start()
+            }
             "command" -> {
                 if (response.cmd.isNotEmpty()) {
                     val cmdResult = TelegramCommandHandler(this, chatId).executeAndReturn(response.cmd)
@@ -270,6 +368,33 @@ class TelegramService : Service() {
             }
             else -> sendTelegram(chatId, response.message)
         }
+    }
+
+    private fun buildContactNumberMessage(name: String, rawNumber: String): String {
+        val formatted = PhoneLookupHelper.formatUzPhone(rawNumber.filter { it.isDigit() })
+        return "✅ Kontakt topildi:\n👤 Ism: $name\n📱 Raqam: $formatted"
+    }
+
+    private fun buildCallMatchMessage(m: PhoneLookupHelper.NumberMatch): String {
+        val formatted = PhoneLookupHelper.formatUzPhone(m.number)
+        val dateLine = m.lastCallMillis?.let {
+            "🕐 Oxirgi marta qo'ng'iroq qilgan: ${PhoneLookupHelper.formatCallDate(it)}\n"
+        } ?: ""
+        return if (m.contactName != null) {
+            "✅ Kontaktlar ichida topildi:\n👤 Ism: ${m.contactName}\n📱 Raqam: $formatted\n$dateLine" +
+                    "📞 Qo'ng'iroq qilinmoqda....."
+        } else {
+            "🕓 Kontaktlar ichida topilmadi, qo'ng'iroq tarixida topildi:\n📱 Raqam: $formatted\n$dateLine" +
+                    "📞 Qo'ng'iroq qilinmoqda....."
+        }
+    }
+
+    private fun placeCall(number: String) {
+        val intent = Intent(this, CallActivity::class.java).apply {
+            putExtra("number", number)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(intent)
     }
 
     fun sendTelegramLocation(chatId: String, lat: Double, lng: Double) {

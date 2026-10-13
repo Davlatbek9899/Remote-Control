@@ -7,7 +7,7 @@ import org.json.JSONObject
 
 object ApiClient {
 
-    private const val BASE_URL = "https://ungritty-tonisha-nonmedical.ngrok-free.dev"
+    private const val BASE_URL = "https://remotecontrol.13-60-189-220.sslip.io"
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)

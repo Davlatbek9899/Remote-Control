@@ -16,8 +16,30 @@ class LocationService : Service() {
         replyTo = intent?.getStringExtra("reply_to") ?: ""
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        startForegroundNotification()
         getLocation()
         return START_NOT_STICKY
+    }
+
+    private fun startForegroundNotification() {
+        val channelId = "location_service"
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId, "Joylashuv", android.app.NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(android.app.NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+        val notification = androidx.core.app.NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Remote Control")
+            .setContentText("Joylashuv aniqlanmoqda...")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .build()
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            startForeground(3, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            startForeground(3, notification)
+        }
     }
 
     private fun getLocation() {
