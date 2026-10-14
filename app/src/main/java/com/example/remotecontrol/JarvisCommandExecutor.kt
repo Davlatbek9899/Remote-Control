@@ -21,6 +21,13 @@ object JarvisCommandExecutor {
 
     // YouTube Data API orqali qidirish — ikkala (fon va YouTube ilovasi) rejimda ham ishlatiladi
     private fun searchYoutube(apiKey: String, query: String): Pair<String, String>? {
+        val found = searchYoutubeFull(apiKey, query) ?: return null
+        return found.first to found.second
+    }
+
+    // Ijrochi nomini (channelTitle) ham qaytaradigan to'liq versiya — "davom etish"/"ijrochi"
+    // rejimlari uchun kerak (keyingi o'xshash qo'shiqni shu ijrochi bo'yicha qidirish uchun)
+    fun searchYoutubeFull(apiKey: String, query: String): Triple<String, String, String>? {
         val searchUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=${Uri.encode(query)}&type=video&videoCategoryId=10&key=$apiKey&maxResults=1"
         val conn = java.net.URL(searchUrl).openConnection() as java.net.HttpURLConnection
         conn.connectTimeout = 8000
@@ -28,25 +35,31 @@ object JarvisCommandExecutor {
         val json = org.json.JSONObject(conn.inputStream.bufferedReader().readText())
         val items = json.getJSONArray("items")
         if (items.length() == 0) return null
+        val snippet = items.getJSONObject(0).getJSONObject("snippet")
         val videoId = items.getJSONObject(0).getJSONObject("id").getString("videoId")
-        val title = items.getJSONObject(0).getJSONObject("snippet").getString("title")
-        return videoId to title
+        return Triple(videoId, snippet.getString("title"), snippet.getString("channelTitle"))
     }
 
     // Musiqa ijro qilish — fon rejimida, YouTube ilovasini ochmasdan.
     // Audio havolasini "o'g'irlash" o'rniga, YouTube'ning rasmiy IFrame Player'ini
     // ko'rinmas oynada ishga tushiramiz (YouTubeAudioService) — bot-tekshiruvi yo'q.
-    fun playMusic(context: Context, query: String, sender: String = "", handler: CommandHandler? = null) {
+    fun playMusic(context: Context, query: String, sender: String = "", handler: CommandHandler? = null, mode: String = "single") {
         Thread {
             try {
-                val found = searchYoutube(BuildConfig.YOUTUBE_API_KEY, query)
+                // "artist" rejimida query — ijrochi nomining o'zi, shu bo'yicha birinchi qo'shiqni topamiz
+                val found = searchYoutubeFull(BuildConfig.YOUTUBE_API_KEY, query)
                 if (found == null) {
                     notify(sender, handler, "❌ \"$query\" bo'yicha video topilmadi, boshqacha nomlab qayta urinib ko'ring.")
                     return@Thread
                 }
-                val (videoId, title) = found
+                val (videoId, title, channelTitle) = found
+                val artistSeed = if (mode == "artist") query else channelTitle
                 val intent = android.content.Intent(context, YouTubeAudioService::class.java).apply {
                     putExtra("video_id", videoId)
+                    putExtra("title", title)
+                    putExtra("mode", mode)
+                    putExtra("artist", artistSeed)
+                    putExtra("fresh", true)
                 }
                 context.startService(intent)
                 notify(sender, handler, "🎵 Ijro qilinmoqda: $title")

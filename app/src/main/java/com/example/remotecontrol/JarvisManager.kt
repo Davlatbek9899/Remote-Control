@@ -76,6 +76,11 @@ MUHIM: "Qayerdasan?", "Sen qayerdasan?", "Hozir qayerdasan?" kabi savollar JARVI
 Musiqa: {"type":"music","query":"qo'shiq nomi","message":"Ijro 🎵"}
 YouTube: {"type":"youtube","query":"qo'shiq nomi","message":"YouTube 🎬"}
 MUHIM (musiqa/YouTube tanlovi): STANDART holat — "music" (fon rejimi, YouTube ilovasi ochilmaydi). FAQAT foydalanuvchi aniq "YouTube'ni och", "YouTube orqali", "YouTube ilovasida" kabi so'z bilan ilovani ochishni so'rasa — "youtube" turini tanla. Boshqa barcha holatda "music" ishlat.
+MUHIM ("music" turi uchun "mode" maydoni) — har doim qo'sh, standart qiymati "single":
+- "single" (standart, foydalanuvchi boshqacha so'ramasa): bitta aniq qo'shiq, tugagach to'xtaydi. query — qo'shiq/ijrochi nomi.
+- "loop": foydalanuvchi "qayta-qayta", "takrorlab", "men to'xtatmagunimcha" kabi so'z ishlatsa — xuddi shu qo'shiq cheksiz takrorlanadi.
+- "continuous": foydalanuvchi "keyingisiga ham o'tsin", "davom etaversin" kabi so'z ishlatsa — qo'shiq tugagach, shunga o'xshash/shu ijrochining boshqa qo'shig'iga avtomatik o'tib, cheksiz davom etadi. query — boshlang'ich qo'shiq/ijrochi nomi.
+- "artist": foydalanuvchi aniq ijrochi nomi bilan ko'plik/umumiy so'rov qilsa (masalan "Doxximning qo'shiqlarini qo'y" — aniq bitta qo'shiq nomi aytilmagan, ijrochi nomi aytilgan): FAQAT shu ijrochining qo'shiqlari orasida cheksiz aylanadi, boshqa ijrochi/mavzuga o'tmaydi. query maydoniga FAQAT ijrochi nomini yoz (qo'shiq nomisiz).
 MUHIM (qidiruv so'zini olish): "query" maydoniga FAQAT qo'shiqning/ijrochining HAQIQIY nomini yoz. Agar foydalanuvchi biror narsani RAD ETSA (masalan "...emas", "... bo'lmasin", "... bilan aralashtirma" kabi), o'sha rad etilgan qismni query ichiga HECH QACHON qo'shma — faqat tasdiqlangan (xohlangan) nomni yoz. Misol: "Doxximning Megaladon qo'shig'ini, Itlar qo'shig'ini emas" → query: "Doxxim Megaladon" (ASLO "Itlar" so'zini qo'shma).
 Ilova: {"type":"command","cmd":"#open_app:telegram","message":"Ochildi 📱"}
 Matn: {"type":"command","cmd":"#show_text:matn","message":"Ko'rsatildi 💬"}
@@ -271,7 +276,8 @@ Misol: "salom" → Salom! Qanday yordam bera olaman? 😊"""
                             city = c.optString("city", ""),
                             action = c.optString("action", ""),
                             cmd = c.optString("cmd", ""),
-                            seconds = c.optInt("seconds", 0)
+                            seconds = c.optInt("seconds", 0),
+                            mode = c.optString("mode", "")
                         )
                     }
                 } else emptyList()
@@ -284,7 +290,8 @@ Misol: "salom" → Salom! Qanday yordam bera olaman? 😊"""
                     action = json.optString("action", ""),
                     cmd = json.optString("cmd", ""),
                     commands = cmdsList,
-                    seconds = json.optInt("seconds", 0)
+                    seconds = json.optInt("seconds", 0),
+                    mode = json.optString("mode", "")
                 )
             } else {
                 JarvisResponse(type = "text", message = text)
@@ -303,5 +310,6 @@ data class JarvisResponse(
     val action: String = "",
     val cmd: String = "",
     val commands: List<JarvisResponse> = emptyList(),
-    val seconds: Int = 0
+    val seconds: Int = 0,
+    val mode: String = ""
 )
