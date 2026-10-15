@@ -117,8 +117,10 @@ object ContactsHelper {
         for (word in fullName.split(Regex("\\s+"))) {
             // Ism "-bek", "-boy", "-xon", "-jon" kabi qo'shimchalar bilan davom etishi odatiy
             // hol — so'ralgan ism so'zning boshlang'ich qismi bo'lsa, buni to'liq moslik
-            // (aniq moslik) deb hisoblaymiz, uzunlik farqidan qat'iy nazar.
-            if (query.length >= 3 && (word.startsWith(query) || query.startsWith(word))) {
+            // (aniq moslik) deb hisoblaymiz. Lekin so'z juda qisqa (masalan bitta harf —
+            // "A Sinf", "A Avaz" kabi guruh/sinf nomlarida uchraydi) bo'lsa, bu tasodifiy
+            // mos kelib qolishi mumkin — shuning uchun bunday qisqa so'zlarni chetlab o'tamiz.
+            if (query.length >= 3 && word.length >= 3 && (word.startsWith(query) || query.startsWith(word))) {
                 return 1.0
             }
             val sim = levenshteinSimilarity(query, word)
