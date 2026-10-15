@@ -25,6 +25,27 @@ object JarvisCommandExecutor {
         return found.first to found.second
     }
 
+    // "Keyingi" (Next) uchun: bir nechta natija so'rab, allaqachon ijro etilganlarini
+    // chetlab, birinchi YANGI qo'shiqni qaytaradi (bitta natija bilan deyarli har doim
+    // hozir ijro bo'layotgan qo'shiqning o'zi qaytib, hech narsa o'zgarmas edi).
+    fun searchYoutubeExcluding(apiKey: String, query: String, excludeIds: Set<String>): Triple<String, String, String>? {
+        val searchUrl = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=${Uri.encode(query)}&type=video&videoCategoryId=10&key=$apiKey&maxResults=10"
+        val conn = java.net.URL(searchUrl).openConnection() as java.net.HttpURLConnection
+        conn.connectTimeout = 8000
+        conn.readTimeout = 8000
+        val json = org.json.JSONObject(conn.inputStream.bufferedReader().readText())
+        val items = json.getJSONArray("items")
+        for (i in 0 until items.length()) {
+            val item = items.getJSONObject(i)
+            val videoId = item.getJSONObject("id").getString("videoId")
+            if (videoId !in excludeIds) {
+                val snippet = item.getJSONObject("snippet")
+                return Triple(videoId, snippet.getString("title"), snippet.getString("channelTitle"))
+            }
+        }
+        return null
+    }
+
     // Ijrochi nomini (channelTitle) ham qaytaradigan to'liq versiya — "davom etish"/"ijrochi"
     // rejimlari uchun kerak (keyingi o'xshash qo'shiqni shu ijrochi bo'yicha qidirish uchun)
     fun searchYoutubeFull(apiKey: String, query: String): Triple<String, String, String>? {

@@ -48,6 +48,8 @@
         android:usesCleartextTraffic="true">
         
         <activity android:name=".CallActivity" android:exported="false"/>
+        <activity android:name=".YouTubeActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden"/>
         <activity android:name=".SplashActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

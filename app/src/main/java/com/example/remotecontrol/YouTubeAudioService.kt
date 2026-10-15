@@ -31,6 +31,7 @@ class YouTubeAudioService : Service() {
     private var pageLoaded = false
     private var isPlaying = false
     private var currentTitle = "Musiqa"
+    private var currentVideoId = ""
     private var currentPositionMs = 0L
     private var currentDurationMs = 0L
     private var albumArt: android.graphics.Bitmap? = null
@@ -97,6 +98,7 @@ class YouTubeAudioService : Service() {
         playedVideoIds.add(videoId)
 
         currentTitle = title
+        currentVideoId = videoId
         albumArt = null
         fetchThumbnail(videoId)
         playVideo(videoId)
@@ -109,6 +111,7 @@ class YouTubeAudioService : Service() {
             queueIndex++
             val (vid, title, _) = queue[queueIndex]
             currentTitle = title
+            currentVideoId = vid
             albumArt = null
             fetchThumbnail(vid)
             playVideo(vid)
@@ -119,14 +122,12 @@ class YouTubeAudioService : Service() {
 
         val seed = if (artistSeed.isNotBlank()) artistSeed else currentTitle
         Thread {
-            val found = JarvisCommandExecutor.searchYoutubeFull(BuildConfig.YOUTUBE_API_KEY, seed)
+            val found = JarvisCommandExecutor.searchYoutubeExcluding(BuildConfig.YOUTUBE_API_KEY, seed, playedVideoIds)
             android.os.Handler(mainLooper).post {
                 if (found != null) {
                     val (vid, title, channel) = found
-                    if (vid !in playedVideoIds) {
-                        if (artistSeed.isBlank()) artistSeed = channel
-                        enqueueAndPlay(vid, title, channel)
-                    }
+                    if (artistSeed.isBlank()) artistSeed = channel
+                    enqueueAndPlay(vid, title, channel)
                 }
             }
         }.start()
@@ -137,6 +138,7 @@ class YouTubeAudioService : Service() {
             queueIndex--
             val (vid, title, _) = queue[queueIndex]
             currentTitle = title
+            currentVideoId = vid
             albumArt = null
             fetchThumbnail(vid)
             playVideo(vid)
@@ -175,18 +177,24 @@ class YouTubeAudioService : Service() {
                 }
 
                 override fun onRewind() {
+                    currentPositionMs = (currentPositionMs - 10000).coerceAtLeast(0)
+                    updatePlaybackState()
                     webView?.evaluateJavascript(
                         "if (player) player.seekTo(Math.max(0, player.getCurrentTime() - 10), true);", null
                     )
                 }
 
                 override fun onFastForward() {
+                    currentPositionMs += 10000
+                    updatePlaybackState()
                     webView?.evaluateJavascript(
                         "if (player) player.seekTo(player.getCurrentTime() + 10, true);", null
                     )
                 }
 
                 override fun onSeekTo(pos: Long) {
+                    currentPositionMs = pos // darhol yangilaymiz — aks holda sekundlik vaqt
+                    updatePlaybackState()   // yangilanishi eski pozitsiyani qaytarib qo'yadi
                     webView?.evaluateJavascript("if (player) player.seekTo(${pos / 1000}, true);", null)
                 }
 
@@ -305,11 +313,22 @@ class YouTubeAudioService : Service() {
             MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
         )
 
+        val contentIntent = android.content.Intent(this, YouTubeActivity::class.java).apply {
+            putExtra("video_id", currentVideoId)
+            putExtra("position_ms", currentPositionMs)
+            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val contentPendingIntent = android.app.PendingIntent.getActivity(
+            this, 0, contentIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle(currentTitle)
             .setContentText(if (isPlaying) "🎵 Ijro etilmoqda" else "⏸ Pauza qilingan")
             .setSmallIcon(android.R.drawable.ic_media_play)
             .apply { albumArt?.let { setLargeIcon(it) } }
+            .setContentIntent(contentPendingIntent)
             .addAction(prevAction)
             .addAction(rewindAction)
             .addAction(playPauseAction)

@@ -120,8 +120,16 @@ object ContactsHelper {
             // (aniq moslik) deb hisoblaymiz. Lekin so'z juda qisqa (masalan bitta harf —
             // "A Sinf", "A Avaz" kabi guruh/sinf nomlarida uchraydi) bo'lsa, bu tasodifiy
             // mos kelib qolishi mumkin — shuning uchun bunday qisqa so'zlarni chetlab o'tamiz.
-            if (query.length >= 3 && word.length >= 3 && (word.startsWith(query) || query.startsWith(word))) {
-                return 1.0
+            if (query.length >= 3 && word.length >= 3) {
+                if (word.startsWith(query)) return 1.0
+                if (query.startsWith(word)) {
+                    // So'rovda shu so'zdan keyin yana so'z bor bo'lsa (masalan "aka", "opa" —
+                    // hurmat so'zi), bu qoldiq qism kontakt ismida ham bo'lishi shart —
+                    // aks holda "Ravshan aka" so'rovi oddiy "Ravshan" kontaktiga ham
+                    // noto'g'ri mos kelib qolaveradi.
+                    val remainder = query.removePrefix(word).trim()
+                    if (remainder.isEmpty() || fullName.contains(remainder)) return 1.0
+                }
             }
             val sim = levenshteinSimilarity(query, word)
             if (sim > best) best = sim
