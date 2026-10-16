@@ -372,6 +372,15 @@
                 android:text="Child" android:textColor="#AAAAAA" android:textSize="10sp"/>
         </LinearLayout>
 
+        <LinearLayout android:id="@+id/navYoutube"
+            android:layout_width="0dp" android:layout_height="48dp"
+            android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="▶️" android:textSize="20sp" android:gravity="center"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="YouTube" android:textColor="#AAAAAA" android:textSize="10sp"/>
+        </LinearLayout>
+
         <LinearLayout android:id="@+id/navProfile"
             android:layout_width="0dp" android:layout_height="48dp"
             android:layout_weight="1" android:orientation="vertical" android:gravity="center">

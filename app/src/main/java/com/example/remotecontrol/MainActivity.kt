@@ -227,6 +227,13 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, ProfileActivity::class.java)); finish()
         }
 
+        val navYoutube = findViewById<LinearLayout>(R.id.navYoutube)
+        navYoutube.setOnClickListener {
+            animateCard(navYoutube)
+            startActivity(Intent(this, YouTubeActivity::class.java))
+            overridePendingTransition(R.anim.slide_up, R.anim.fade_in)
+        }
+
 
     }
 
