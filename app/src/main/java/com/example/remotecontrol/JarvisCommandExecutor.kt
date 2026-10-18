@@ -152,28 +152,51 @@ object JarvisCommandExecutor {
     }
 
     // Oxirgi rasmni yuborish
-    fun sendLastPhoto(context: Context, sender: String, handler: CommandHandler) {
+    // count=1 -> "oxirgi rasm", count=5 -> "oxirgi 5 ta rasm".
+    // photoMode: "any" (har qanday), "camera" (faqat kamera, skrinshotlar chetlab o'tiladi),
+    // "screenshot" (faqat skrinshotlar) — skrinshotlar nomi yoki saqlangan papkasi bo'yicha aniqlanadi.
+    fun sendLastPhotos(context: Context, sender: String, handler: CommandHandler?, count: Int, photoMode: String) {
         try {
             val projection = arrayOf(
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.DATA,
-                MediaStore.Images.Media.DATE_ADDED
+                MediaStore.Images.Media.DISPLAY_NAME
             )
+            val screenshotClause = "(${MediaStore.Images.Media.DISPLAY_NAME} LIKE ? OR ${MediaStore.Images.Media.DATA} LIKE ?)"
+            val selection = when (photoMode) {
+                "screenshot" -> screenshotClause
+                "camera" -> "NOT $screenshotClause"
+                else -> null
+            }
+            val selectionArgs = if (photoMode == "screenshot" || photoMode == "camera") {
+                arrayOf("%Screenshot%", "%Screenshot%")
+            } else null
+
             val cursor = context.contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                projection, null, null,
+                projection, selection, selectionArgs,
                 "${MediaStore.Images.Media.DATE_ADDED} DESC"
             )
+            val paths = mutableListOf<String>()
             cursor?.use {
-                if (it.moveToFirst()) {
-                    val path = it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA))
-                    handler.sendSms(sender, "📸 Oxirgi rasm topildi: $path\n(Telegram bot orqali yuborish tez orada qo'shiladi)")
-                } else {
-                    handler.sendSms(sender, "📭 Hech qanday rasm topilmadi")
+                while (it.moveToNext() && paths.size < count) {
+                    paths.add(it.getString(it.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)))
                 }
             }
+
+            if (paths.isEmpty()) {
+                notify(sender, handler, if (photoMode == "screenshot") "📭 Hech qanday skrinshot topilmadi" else "📭 Hech qanday rasm topilmadi")
+                return
+            }
+
+            val telegramService = TelegramService.instance
+            if (telegramService == null) {
+                notify(sender, handler, "⚠️ Bu funksiya hozircha faqat Telegram orqali ishlaydi")
+                return
+            }
+            paths.forEach { path -> telegramService.sendTelegramPhoto(sender, path) }
         } catch (e: Exception) {
-            handler.sendSms(sender, "⚠️ Rasmni topib bo'lmadi: ${e.message?.take(30)}")
+            notify(sender, handler, "⚠️ Rasmlarni yuborishda xatolik: ${e.message?.take(50)}")
         }
     }
 

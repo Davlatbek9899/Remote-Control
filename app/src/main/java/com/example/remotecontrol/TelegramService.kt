@@ -306,6 +306,12 @@ class TelegramService : Service() {
                     }
                 }.start()
             }
+            "send_photo" -> {
+                sendTelegram(chatId, response.message.ifEmpty { "Qidirilmoqda..." })
+                Thread {
+                    JarvisCommandExecutor.sendLastPhotos(this, chatId, null, response.count.coerceAtLeast(1), response.photoMode)
+                }.start()
+            }
             "command" -> {
                 if (response.cmd.isNotEmpty()) {
                     val cmdResult = TelegramCommandHandler(this, chatId).executeAndReturn(response.cmd)

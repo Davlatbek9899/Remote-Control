@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.MODIFY_AUDIO_SETTINGS,
         Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS,
         Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_PHONE_STATE,
-        Manifest.permission.BLUETOOTH_CONNECT
+        Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.READ_MEDIA_IMAGES
     )
 
     private var isServiceRunning = false
@@ -227,12 +227,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, ProfileActivity::class.java)); finish()
         }
 
-        val navYoutube = findViewById<LinearLayout>(R.id.navYoutube)
-        navYoutube.setOnClickListener {
-            animateCard(navYoutube)
-            startActivity(Intent(this, YouTubeActivity::class.java))
-            overridePendingTransition(R.anim.slide_up, R.anim.fade_in)
-        }
 
 
     }

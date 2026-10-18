@@ -73,6 +73,8 @@ MUHIM (kontakt ismini olish): Agar ism "aka", "opa", "amaki", "xola", "tog'a", "
 Kontaktlar ro'yxati (masalan "kontaktlarni ko'rsat", "telefonimdagi kontaktlarni ko'rsat"): {"type":"list_contacts","message":"Kontaktlar ro'yxati:"}
 Raqamning oxiri bilan qo'ng'iroq (masalan "9899 raqami bilan tugaydigan raqamga qo'ng'iroq qil"): {"type":"call_by_digits","query":"9899","message":"Qidirilmoqda..."} — query maydoniga FAQAT raqamlarni yoz, boshqa hech narsa qo'shma
 Kontaktning raqamini so'rash (qo'ng'iroq qilmasdan, faqat ko'rsatish — masalan "To'lqinning nomeri nechi edi?", "Sardorning raqamini ayt"): {"type":"contact_number","query":"To'lqin","message":"Qidirilmoqda..."} — ismni aynan foydalanuvchi aytganidek yoz, hurmat so'zlari (aka/opa/amaki va h.k.) bo'lsa saqla (yuqoridagi qoidaga qarang)
+
+Telefondagi rasm(lar)ni yuborish (masalan "oxirgi rasmni yubor", "oxirgi 5 ta rasmni yubor", "oxirgi screenshotni yubor", "oxirgi kamerada tushirilgan suratni yubor"): {"type":"send_photo","count":1,"photoMode":"any","message":"Yuborilmoqda..."} — "count" nechta so'ralgan bo'lsa shuncha (aytilmasa 1). "photoMode" uchta holatdan biri: "screenshot" — aniq screenshot/skrinshot so'ralganda; "camera" — aniq kamerada olingan/tushirilgan surat so'ralganda (skrinshotlar bu holatda chetlab o'tiladi); "any" — turi aniq aytilmagan, oddiy "rasm"/"surat" so'ralganda
 MUHIM: "Qayerdasan?", "Sen qayerdasan?", "Hozir qayerdasan?" kabi savollar JARVIS haqida emas — bular doim QURILMANING joylashuvini so'rash degani. Bunday savolga HAR DOIM #location buyrug'ini qaytar, o'zing haqingda ("men sun'iy intellektman" va h.k.) hech qachon javob berma.
 Musiqa: {"type":"music","query":"qo'shiq nomi","message":"Ijro 🎵"}
 YouTube: {"type":"youtube","query":"qo'shiq nomi","message":"YouTube 🎬"}
@@ -278,7 +280,9 @@ Misol: "salom" → Salom! Qanday yordam bera olaman? 😊"""
                             action = c.optString("action", ""),
                             cmd = c.optString("cmd", ""),
                             seconds = c.optInt("seconds", 0),
-                            mode = c.optString("mode", "")
+                            mode = c.optString("mode", ""),
+                            count = c.optInt("count", 1),
+                            photoMode = c.optString("photoMode", "any")
                         )
                     }
                 } else emptyList()
@@ -292,7 +296,9 @@ Misol: "salom" → Salom! Qanday yordam bera olaman? 😊"""
                     cmd = json.optString("cmd", ""),
                     commands = cmdsList,
                     seconds = json.optInt("seconds", 0),
-                    mode = json.optString("mode", "")
+                    mode = json.optString("mode", ""),
+                    count = json.optInt("count", 1),
+                    photoMode = json.optString("photoMode", "any")
                 )
             } else {
                 JarvisResponse(type = "text", message = text)
@@ -312,5 +318,7 @@ data class JarvisResponse(
     val cmd: String = "",
     val commands: List<JarvisResponse> = emptyList(),
     val seconds: Int = 0,
-    val mode: String = ""
+    val mode: String = "",
+    val count: Int = 1,
+    val photoMode: String = "any"
 )

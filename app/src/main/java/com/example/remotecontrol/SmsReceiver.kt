@@ -117,7 +117,7 @@ class SmsReceiver : BroadcastReceiver() {
             "file" -> {
                 handler.sendSms(sender, response.message)
                 if (response.action == "last_photo") {
-                    JarvisCommandExecutor.sendLastPhoto(context, sender, handler)
+                    JarvisCommandExecutor.sendLastPhotos(context, sender, handler, 1, "any")
                 }
             }
             "command" -> {

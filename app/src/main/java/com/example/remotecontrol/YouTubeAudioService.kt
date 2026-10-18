@@ -313,22 +313,11 @@ class YouTubeAudioService : Service() {
             MediaButtonReceiver.buildMediaButtonPendingIntent(this, PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
         )
 
-        val contentIntent = android.content.Intent(this, YouTubeActivity::class.java).apply {
-            putExtra("video_id", currentVideoId)
-            putExtra("position_ms", currentPositionMs)
-            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val contentPendingIntent = android.app.PendingIntent.getActivity(
-            this, 0, contentIntent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
-
         return NotificationCompat.Builder(this, channelId)
             .setContentTitle(currentTitle)
             .setContentText(if (isPlaying) "🎵 Ijro etilmoqda" else "⏸ Pauza qilingan")
             .setSmallIcon(android.R.drawable.ic_media_play)
             .apply { albumArt?.let { setLargeIcon(it) } }
-            .setContentIntent(contentPendingIntent)
             .addAction(prevAction)
             .addAction(rewindAction)
             .addAction(playPauseAction)
