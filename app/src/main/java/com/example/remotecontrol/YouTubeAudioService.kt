@@ -50,7 +50,7 @@ class YouTubeAudioService : Service() {
     // O'zimizning domenimiz — YouTube'ning o'zini (youtube.com) asos URL sifatida ko'rsatish
     // "self-embedding" deb hisoblanib, 152-xato bilan rad etiladi. Shuning uchun haqiqiy,
     // bizga tegishli domenni ishlatamiz.
-    private val embedOrigin = "https://remotecontrol.13-60-189-220.sslip.io"
+    private val embedOrigin = "https://remotecontrol.104-211-93-165.sslip.io"
 
     override fun onCreate() {
         super.onCreate()

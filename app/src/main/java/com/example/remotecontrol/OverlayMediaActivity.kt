@@ -88,8 +88,9 @@ class OverlayMediaActivity : Activity() {
                 setPadding(40, 8, 40, 16)
                 gravity = Gravity.CENTER
             }
+            val chipLabel = intent.getStringExtra("chip_label") ?: "💬 Xabar"
             val chipView = TextView(this).apply {
-                text = "💬 Xabar"
+                text = chipLabel
                 setTextColor(Color.parseColor("#1A1A2E"))
                 this.textSize = 12f
                 setPadding(20, 8, 20, 8)

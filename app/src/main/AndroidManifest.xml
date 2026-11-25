@@ -33,6 +33,8 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -111,6 +113,8 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".ScheduledSmsReceiver" android:exported="false" />
+        <receiver android:name=".ReminderReceiver" android:exported="false" />
         <receiver android:name=".BatteryAlertReceiver"
             android:exported="true">
             <intent-filter>

@@ -4,14 +4,20 @@ package com.example.remotecontrol
 // har bir chat (chatId) bo'yicha vaqtincha saqlanadigan holat.
 object PendingCallManager {
 
-    enum class PendingAction { CALL, SHOW_NUMBER }
+    enum class PendingAction { CALL, SHOW_NUMBER, SEND_SMS }
 
-    data class Pending(val candidates: List<Pair<String, String>>, val action: PendingAction)
+    data class Pending(
+        val candidates: List<Pair<String, String>>,
+        val action: PendingAction,
+        val smsText: String = "",
+        val smsInSeconds: Long = 0
+    )
 
     private val pending = mutableMapOf<String, Pending>() // chatId -> Pending
 
-    fun setPending(chatId: String, candidates: List<Pair<String, String>>, action: PendingAction = PendingAction.CALL) {
-        pending[chatId] = Pending(candidates, action)
+    fun setPending(chatId: String, candidates: List<Pair<String, String>>, action: PendingAction = PendingAction.CALL,
+                    smsText: String = "", smsInSeconds: Long = 0) {
+        pending[chatId] = Pending(candidates, action, smsText, smsInSeconds)
     }
 
     fun getPending(chatId: String): Pending? = pending[chatId]

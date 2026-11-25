@@ -74,6 +74,10 @@ Kontaktlar ro'yxati (masalan "kontaktlarni ko'rsat", "telefonimdagi kontaktlarni
 Raqamning oxiri bilan qo'ng'iroq (masalan "9899 raqami bilan tugaydigan raqamga qo'ng'iroq qil"): {"type":"call_by_digits","query":"9899","message":"Qidirilmoqda..."} — query maydoniga FAQAT raqamlarni yoz, boshqa hech narsa qo'shma
 Kontaktning raqamini so'rash (qo'ng'iroq qilmasdan, faqat ko'rsatish — masalan "To'lqinning nomeri nechi edi?", "Sardorning raqamini ayt"): {"type":"contact_number","query":"To'lqin","message":"Qidirilmoqda..."} — ismni aynan foydalanuvchi aytganidek yoz, hurmat so'zlari (aka/opa/amaki va h.k.) bo'lsa saqla (yuqoridagi qoidaga qarang)
 
+Eslatma qo'yish (masalan "2 soatdan keyin onamga qo'ng'iroq qilishim kerak, o'sha payti meni eslat", "ertaga ertalab soat 7da uyg'on deb eslat"): {"type":"set_reminder","text":"Onangizga qo'ng'iroq qiling","in_seconds":7200,"message":"Eslatma o'rnatildi..."} — "text" eslatma matni (foydalanuvchi aytgan ishni qisqa, tushunarli buyruq/eslatma shakliga keltir), "in_seconds" hozirgi vaqtdan (yuqorida berilgan) necha soniyadan keyin eslatish kerakligi.
+
+Kontaktga SMS yozish (masalan "Sardorga qayerdasan deb xabar yubor", "To'lqinga 5 daqiqadan keyin boryapman deb sms yoz" — bu yerda "5 daqiqadan keyin" xabar MATNINING o'zi, hozir yuboriladi; "Umidga ertaga ertalab soat 8 da Xayrli tong deb xabar yoz" — bu esa VAQT BELGILAB yuborish): {"type":"send_sms","query":"Sardor","text":"Qayerdasan?","in_seconds":0,"message":"Yuborilmoqda..."} — "query" kontakt ismi (hurmat so'zlari bo'lsa saqla, yuqoridagi qoidaga qarang), "text" — aynan yuboriladigan SMS matni (so'roq/buyruq shaklini ham to'g'ri gapga aylantir, masalan "qayerdasan deb yoz" -> text:"Qayerdasan?"). Foydalanuvchi aytgan matn tugallanmagan, imlo xatosi bor yoki qo'pol shaklda bo'lsa, buni tabiiy, to'g'ri va xushmuomala gapga aylantirib yoz (mazmunini o'zgartirmasdan). Matnga mazmuniga mos 1-2 ta emoji qo'sh (haddan tashqari ko'p emas). "in_seconds" — necha soniyadan keyin yuborilishi kerak: darhol yuborilsa 0, vaqt/sana berilgan bo'lsa hozirgi vaqtdan (yuqorida berilgan) hisoblab soniyaga aylantir.
+
 Telefondagi rasm(lar)ni yuborish (masalan "oxirgi rasmni yubor", "oxirgi 5 ta rasmni yubor", "oxirgi screenshotni yubor", "oxirgi kamerada tushirilgan suratni yubor"): {"type":"send_photo","count":1,"photoMode":"any","message":"Yuborilmoqda..."} — "count" nechta so'ralgan bo'lsa shuncha (aytilmasa 1). "photoMode" uchta holatdan biri: "screenshot" — aniq screenshot/skrinshot so'ralganda; "camera" — aniq kamerada olingan/tushirilgan surat so'ralganda (skrinshotlar bu holatda chetlab o'tiladi); "any" — turi aniq aytilmagan, oddiy "rasm"/"surat" so'ralganda
 MUHIM: "Qayerdasan?", "Sen qayerdasan?", "Hozir qayerdasan?" kabi savollar JARVIS haqida emas — bular doim QURILMANING joylashuvini so'rash degani. Bunday savolga HAR DOIM #location buyrug'ini qaytar, o'zing haqingda ("men sun'iy intellektman" va h.k.) hech qachon javob berma.
 Musiqa: {"type":"music","query":"qo'shiq nomi","message":"Ijro 🎵"}
@@ -147,8 +151,9 @@ Misol: "salom" → Salom! Qanday yordam bera olaman? 😊"""
             is AiProvider.OpenRouter -> "meta-llama/llama-4-scout:free"
             else -> error("OpenAI-uslubidagi provayder emas")
         }
+        val now = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm, EEEE", java.util.Locale("uz")).format(java.util.Date())
         val messages = JSONArray()
-        messages.put(JSONObject().apply { put("role", "system"); put("content", SYSTEM_PROMPT) })
+        messages.put(JSONObject().apply { put("role", "system"); put("content", "$SYSTEM_PROMPT\n\nHozirgi sana va vaqt: $now") })
         history.forEach { (role, content) ->
             messages.put(JSONObject().apply { put("role", role); put("content", content) })
         }
@@ -282,7 +287,9 @@ Misol: "salom" → Salom! Qanday yordam bera olaman? 😊"""
                             seconds = c.optInt("seconds", 0),
                             mode = c.optString("mode", ""),
                             count = c.optInt("count", 1),
-                            photoMode = c.optString("photoMode", "any")
+                            photoMode = c.optString("photoMode", "any"),
+                            text = c.optString("text", ""),
+                            inSeconds = c.optLong("in_seconds", 0)
                         )
                     }
                 } else emptyList()
@@ -298,7 +305,9 @@ Misol: "salom" → Salom! Qanday yordam bera olaman? 😊"""
                     seconds = json.optInt("seconds", 0),
                     mode = json.optString("mode", ""),
                     count = json.optInt("count", 1),
-                    photoMode = json.optString("photoMode", "any")
+                    photoMode = json.optString("photoMode", "any"),
+                    text = json.optString("text", ""),
+                    inSeconds = json.optLong("in_seconds", 0)
                 )
             } else {
                 JarvisResponse(type = "text", message = text)
@@ -320,5 +329,7 @@ data class JarvisResponse(
     val seconds: Int = 0,
     val mode: String = "",
     val count: Int = 1,
-    val photoMode: String = "any"
+    val photoMode: String = "any",
+    val text: String = "",
+    val inSeconds: Long = 0
 )

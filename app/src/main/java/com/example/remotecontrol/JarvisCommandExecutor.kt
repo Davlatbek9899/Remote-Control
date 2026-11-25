@@ -152,6 +152,28 @@ object JarvisCommandExecutor {
     }
 
     // Oxirgi rasmni yuborish
+    // Kontakt aniqlangandan so'ng — darhol yuborish yoki (in_seconds > 0 bo'lsa) rejalashtirish.
+    fun deliverSms(context: Context, chatId: String, name: String, number: String, text: String, inSeconds: Long) {
+        if (inSeconds <= 0) {
+            CommandHandler(context).sendSms(number, text)
+            notify(chatId, null, "✅ $name ga SMS yuborildi:\n\"$text\"")
+        } else {
+            ScheduledSmsReceiver.schedule(context, number, text, inSeconds)
+            val whenText = formatDelay(inSeconds)
+            notify(chatId, null, "⏰ $name ga SMS rejalashtirildi ($whenText):\n\"$text\"")
+        }
+    }
+
+    private fun formatDelay(seconds: Long): String {
+        val hours = seconds / 3600
+        val minutes = (seconds % 3600) / 60
+        return when {
+            hours > 0 -> "${hours} soat ${minutes} daqiqadan keyin"
+            minutes > 0 -> "${minutes} daqiqadan keyin"
+            else -> "${seconds} soniyadan keyin"
+        }
+    }
+
     // count=1 -> "oxirgi rasm", count=5 -> "oxirgi 5 ta rasm".
     // photoMode: "any" (har qanday), "camera" (faqat kamera, skrinshotlar chetlab o'tiladi),
     // "screenshot" (faqat skrinshotlar) — skrinshotlar nomi yoki saqlangan papkasi bo'yicha aniqlanadi.
@@ -160,17 +182,21 @@ object JarvisCommandExecutor {
             val projection = arrayOf(
                 MediaStore.Images.Media._ID,
                 MediaStore.Images.Media.DATA,
-                MediaStore.Images.Media.DISPLAY_NAME
+                MediaStore.Images.Media.BUCKET_DISPLAY_NAME
             )
-            val screenshotClause = "(${MediaStore.Images.Media.DISPLAY_NAME} LIKE ? OR ${MediaStore.Images.Media.DATA} LIKE ?)"
+            // Fayl nomi emas, balki haqiqatan QAYSI PAPKADA saqlanganiga qaraymiz — bu ancha
+            // ishonchli (masalan boshqa ilovadan saqlangan rasm "Screenshot" so'zisiz nomlangan
+            // bo'lishi mumkin, lekin u baribir "Camera" papkasida bo'lmaydi).
             val selection = when (photoMode) {
-                "screenshot" -> screenshotClause
-                "camera" -> "NOT $screenshotClause"
+                "screenshot" -> "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME} LIKE ?"
+                "camera" -> "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME} = ?"
                 else -> null
             }
-            val selectionArgs = if (photoMode == "screenshot" || photoMode == "camera") {
-                arrayOf("%Screenshot%", "%Screenshot%")
-            } else null
+            val selectionArgs = when (photoMode) {
+                "screenshot" -> arrayOf("%Screenshot%")
+                "camera" -> arrayOf("Camera")
+                else -> null
+            }
 
             val cursor = context.contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,

@@ -72,7 +72,7 @@ class TelegramService : Service() {
             try {
                 val password = SecurityManager.getPassword(this) ?: return@Thread
                 val encodedPassword = java.net.URLEncoder.encode(password, "UTF-8")
-                val url = "https://remotecontrol.13-60-189-220.sslip.io/telegram/poll?password=$encodedPassword"
+                val url = "https://remotecontrol.104-211-93-165.sslip.io/telegram/poll?password=$encodedPassword"
 
                 val connection = URL(url).openConnection() as HttpURLConnection
                 connection.connectTimeout = 10000
@@ -160,6 +160,9 @@ class TelegramService : Service() {
                     }
                     PendingCallManager.PendingAction.SHOW_NUMBER -> {
                         sendTelegram(chatId, buildContactNumberMessage(selected.first, selected.second))
+                    }
+                    PendingCallManager.PendingAction.SEND_SMS -> {
+                        JarvisCommandExecutor.deliverSms(this, chatId, selected.first, selected.second, pendingState.smsText, pendingState.smsInSeconds)
                     }
                 }
                 return
@@ -306,6 +309,39 @@ class TelegramService : Service() {
                     }
                 }.start()
             }
+            "set_reminder" -> {
+                val text = response.text
+                val inSeconds = response.inSeconds.coerceAtLeast(1)
+                ReminderReceiver.schedule(this, chatId, text, inSeconds)
+                val hours = inSeconds / 3600
+                val minutes = (inSeconds % 3600) / 60
+                val whenText = when {
+                    hours > 0 -> "${hours} soat ${minutes} daqiqadan keyin"
+                    minutes > 0 -> "${minutes} daqiqadan keyin"
+                    else -> "${inSeconds} soniyadan keyin"
+                }
+                sendTelegram(chatId, "⏰ Eslatma o'rnatildi ($whenText):\n\"$text\"")
+            }
+            "send_sms" -> {
+                val query = response.query
+                val text = response.text
+                val inSeconds = response.inSeconds
+                Thread {
+                    val matches = ContactsHelper.searchContacts(this, query)
+                    when {
+                        matches.isEmpty() -> sendTelegram(chatId, "❌ \"$query\" nomli kontakt topilmadi.")
+                        matches.size == 1 -> {
+                            val (name, number) = matches[0]
+                            JarvisCommandExecutor.deliverSms(this, chatId, name, number, text, inSeconds)
+                        }
+                        else -> {
+                            PendingCallManager.setPending(chatId, matches, PendingCallManager.PendingAction.SEND_SMS, text, inSeconds)
+                            val list = matches.mapIndexed { i, (name, _) -> "${i + 1}. $name" }.joinToString("\n")
+                            sendTelegram(chatId, "🔎 Bir nechta mos kontakt topildi, qaysi biriga SMS yozay?\n$list")
+                        }
+                    }
+                }.start()
+            }
             "send_photo" -> {
                 sendTelegram(chatId, response.message.ifEmpty { "Qidirilmoqda..." })
                 Thread {
@@ -390,7 +426,7 @@ class TelegramService : Service() {
     fun sendTelegramLocation(chatId: String, lat: Double, lng: Double) {
         Thread {
             try {
-                val url = "https://remotecontrol.13-60-189-220.sslip.io/telegram/send"
+                val url = "https://remotecontrol.104-211-93-165.sslip.io/telegram/send"
                 val body = JSONObject().apply {
                     put("chat_id", chatId)
                     put("type", "location")
@@ -413,7 +449,7 @@ class TelegramService : Service() {
     fun sendTelegram(chatId: String, text: String) {
         Thread {
             try {
-                val url = "https://remotecontrol.13-60-189-220.sslip.io/telegram/send"
+                val url = "https://remotecontrol.104-211-93-165.sslip.io/telegram/send"
                 val body = JSONObject().apply {
                     put("chat_id", chatId)
                     put("type", "text")
@@ -518,7 +554,7 @@ class TelegramService : Service() {
     fun sendTelegramPhoto(chatId: String, photoPath: String, caption: String = "") {
         Thread {
             try {
-                val url = "https://remotecontrol.13-60-189-220.sslip.io/telegram/send_photo"
+                val url = "https://remotecontrol.104-211-93-165.sslip.io/telegram/send_photo"
                 val file = java.io.File(photoPath)
                 if (!file.exists()) {
                     sendTelegram(chatId, "❌ Fayl topilmadi")
